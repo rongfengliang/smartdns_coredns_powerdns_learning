@@ -1,0 +1,69 @@
+version: "3"
+services:
+  pdnsadmin:
+    image: powerdnsadmin/pda-legacy:0.3
+    networks:
+      dns:
+        ipv4_address: 172.16.238.9
+    ports:
+      - 80:80
+    environment:
+    - PDNS_API_KEY=a_strong_api_key
+    - PDNS_STATS_URL=http://pdns:8081
+    - PDNS_API_URL=http://pdns:8081
+    - PDNS_VERSION=4.6.2
+  pdns:
+    image: interlegis/powerdns:4.6.2
+    networks:
+      dns:
+        ipv4_address: 172.16.238.10
+    ports:
+      -  3053:53
+      -  3053:53/udp
+      -  8081:8081
+    environment:
+      - PDNSCONF_API_KEY=a_strong_api_key
+      - PDNSCONF_DNSUPDATE=yes
+      - SECALLZONES_CRONJOB=yes
+      - PDNSCONF_GMYSQL_USER=root
+      - PDNSCONF_GMYSQL_DBNAME=powerdns
+      - PDNSCONF_GMYSQL_PASSWORD=dalong
+  coredns:
+    image: dalongrong/coredns
+    command: -conf=/opt/Corefile
+    networks:
+      dns:
+        ipv4_address: 172.16.238.11
+    volumes:
+      - ./Corefile:/opt/Corefile
+    ports:
+      - 2053:53
+      - 2053:53/udp
+  mysql:
+    image: mysql:8.0.32
+    command: --default-authentication-plugin=mysql_native_password --log-bin --binlog-format=ROW --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      dns:
+        ipv4_address: 172.16.238.12
+    environment:
+      - MYSQL_ROOT_PASSWORD=dalong
+      - MYSQL_DATABASE=coredns
+    ports:
+      - 3306:3306
+  app:
+     image: pymumu/smartdns:latest
+     networks:
+      dns:
+        ipv4_address: 172.16.238.13
+     volumes:
+       - ./smartdns:/etc/smartdns
+     ports:
+       - 1053:53/udp
+       - 1053:53/tcp
+networks:
+  dns:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24

@@ -1,0 +1,6 @@
+.:53 {
+   mysql {
+    dsn root:dalong@tcp(mysql:3306)/powerdns?tls=skip-verify&autocommit=true
+    ttl 20
+  }
+}
